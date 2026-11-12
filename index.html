@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>World Article - Minimal Reader</title>
+  
+  <!-- Performance Boosters for Slow Networks -->
+  <link rel="preconnect" href="https://en.wikipedia.org">
+  <link rel="preconnect" href="https://hi.wikipedia.org">
+  <link rel="dns-prefetch" href="https://upload.wikimedia.org">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- ANTI-THEFT & SOURCE CODE PROTECTION STYLES -->
+  <style>
+    /* Disables text highlighting and copying */
+    body {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    img {
+      -webkit-user-drag: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-20 bg-black text-white">
+
+  <!-- Apple Spotlight Style Prominent Search Header -->
+  <header class="sticky top-0 z-50 glass-nav px-4 py-4">
+    <div class="max-w-3xl mx-auto w-full relative">
+      <div class="relative w-full">
+        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+          <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+        </div>
+        <input 
+          type="text" 
+          id="searchInput"
+          placeholder="search any article..."
+          class="w-full pl-12 pr-4 py-3.5 text-base text-white rounded-2xl search-input focus:outline-none"
+          oninput="handleSearchInput(this.value)"
+          onkeydown="if(event.key === 'Enter') executeSearch(this.value)"
+        >
+      </div>
+
+      <!-- Live Search Suggestions Dropdown -->
+      <div id="suggestionsBox" class="absolute left-0 right-0 mt-2 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden hidden z-50 max-h-80 overflow-y-auto"></div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-3xl mx-auto px-4 mt-6 relative">
+
+    <!-- HOME VIEW -->
+    <div id="homeView">
+      <div class="mb-6 flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold tracking-tight text-white">Welcome to World Article</h1>
+          <p class="text-gray-400 mt-1 text-sm">Explore the universe of knowledge, cleanly and instantly.</p>
+        </div>
+        <!-- Language Selector Button (Clicking opens popup) -->
+        <button onclick="openLanguageModal()" id="currentLangBtn" class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider flex items-center space-x-1.5 transition cursor-pointer flex-shrink-0">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/></svg>
+          <span id="langButtonText">English</span>
+        </button>
+      </div>
+
+      <div id="feedGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+    </div>
+
+    <!-- ARTICLE READER VIEW -->
+    <div id="readerView" class="hidden">
+      <div class="flex items-center justify-between mb-6">
+        <button onclick="closeArticle()" class="flex items-center space-x-2 text-sm text-blue-400 hover:text-blue-300 font-medium transition cursor-pointer">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+          </svg>
+          <span>Wapas Jayen</span>
+        </button>
+        <span id="sourceTag" class="text-xs text-gray-500 uppercase tracking-widest font-semibold">Wikipedia Source</span>
+      </div>
+
+      <div class="space-y-4">
+        <div class="flex flex-wrap items-center gap-2.5">
+          <h1 id="articleTitle" class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-tight"></h1>
+          
+          <div class="flex items-center gap-2">
+            <!-- Dynamic Article Language Badge -->
+            <button onclick="openLanguageModal()" id="articleLangBadge" class="inline-flex items-center space-x-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition cursor-pointer flex-shrink-0">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"/></svg>
+              <span id="articleLangText">English</span>
+            </button>
+          </div>
+        </div>
+
+        <p id="articleDescription" class="text-lg text-gray-400 font-normal italic"></p>
+
+        <!-- GLOBAL ARTICLE AUDIO PLAYER BAR -->
+        <div id="audioPlayerBar" class="hidden flex items-center justify-between bg-zinc-900/90 border border-zinc-800 rounded-2xl p-4 my-4 backdrop-blur-md shadow-xl">
+          <div class="flex items-center space-x-3">
+            <button id="globalPlayBtn" onclick="toggleGlobalAudio()" class="w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center transition shadow-lg cursor-pointer">
+              <svg id="playIconSvg" class="w-5 h-5 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </button>
+            <div>
+              <div class="text-sm font-bold text-white">Listen to Article</div>
+              <div id="audioStatusText" class="text-xs text-gray-400">Play full article audio</div>
+            </div>
+          </div>
+          <span class="text-xs font-semibold text-blue-400 uppercase tracking-wider bg-blue-600/10 px-2.5 py-1 rounded-lg border border-blue-500/20">Audio Reader</span>
+        </div>
+
+        <!-- TABLE OF CONTENTS BOX -->
+        <div id="tableOfContentsBox" class="hidden bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4 my-4 backdrop-blur-md">
+          <h3 class="text-xs font-bold uppercase tracking-widest text-blue-400 mb-3">Contents</h3>
+          <div id="tocList" class="flex flex-col space-y-1 text-sm"></div>
+        </div>
+        
+        <div id="heroImageContainer" class="w-full my-6 overflow-hidden rounded-2xl bg-zinc-900 border border-zinc-800 hidden">
+          <img id="heroImage" class="w-full max-h-[400px] object-cover cursor-zoom-in" loading="lazy" onclick="openImageModal(this.src)" alt="Article Banner">
+        </div>
+      </div>
+
+      <div id="articleBody" class="content-body mt-6 text-gray-300"></div>
+    </div>
+
+    <!-- Side Fast Scroll Index Bar -->
+    <div id="sideScrollIndex" class="fixed right-2 top-1/2 -translate-y-1/2 z-40 hidden flex-col items-center space-y-1.5 bg-zinc-900/60 border border-zinc-800/80 p-1.5 rounded-full backdrop-blur-md shadow-2xl"></div>
+
+    <!-- Loader -->
+    <div id="loader" class="hidden flex justify-center items-center py-20">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+    </div>
+
+  </main>
+
+  <!-- Full-Screen Image Lightbox Modal -->
+  <div id="imageModal" class="fixed inset-0 z-50 bg-black/95 flex items-center justify-center hidden p-4" onclick="closeImageModal()">
+    <button class="absolute top-5 right-5 text-white bg-zinc-800/80 rounded-full p-3 hover:bg-zinc-700 transition">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+    <img id="modalImage" class="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl" loading="lazy" src="" alt="Zoomed Image">
+  </div>
+
+  <!-- Language Selection Popup Modal -->
+  <div id="languageModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center hidden p-4" onclick="closeLanguageModal(event)">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold text-white">Choose Your Language</h3>
+        <button onclick="closeLanguageModal()" class="text-gray-400 hover:text-white p-1 rounded-full hover:bg-zinc-800 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <p class="text-xs text-gray-400 mb-4">Select your preferred reading language for World Article:</p>
+      
+      <div class="grid grid-cols-2 gap-2.5 max-h-[60vh] overflow-y-auto pr-1">
+        <button onclick="setAppLanguage('en', 'English')" class="flex items-center justify-between p-3 rounded-xl bg-zinc-800/50 hover:bg-blue-600/20 border border-zinc-800 hover:border-blue-500/40 text-left transition">
+          <span class="text-sm font-semibold text-white">English</span>
+          <span class="text-xs text-gray-400">EN</span>
+        </button>
+        <button onclick="setAppLanguage('hi', 'हिन्दी')" class="flex items-center justify-between p-3 rounded-xl bg-zinc-800/50 hover:bg-blue-600/20 border border-zinc-800 hover:border-blue-500/40 text-left transition">
+          <span class="text-sm font-semibold text-white">हिन्दी (Hindi)</span>
+          <span class="text-xs text-gray-400">HI</span>
+        </button>
+        <button onclick="setAppLanguage('es', 'Español')" class="flex items-center justify-between p-3 rounded-xl bg-zinc-800/50 hover:bg-blue-600/20 border border-zinc-800 hover:border-blue-500/40 text-left transition">
+          <span class="text-sm font-semibold text-white">Español (Spanish)</span>
+          <span class="text-xs text-gray-400">ES</span>
+        </button>
+        <button onclick="setAppLanguage('fr', 'Français')" class="flex items-center justify-between p-3 rounded-xl bg-zinc-800/50 hover:bg-blue-600/20 border border-zinc-800 hover:border-blue-500/40 text-left transition">
+          <span class="text-sm font-semibold text-white">Français (French)</span>
+          <span class="text-xs text-gray-400">FR</span>
+        </button>
+        <button onclick="setAppLanguage('ar', 'العربية')" class="flex items-center justify-between p-3 rounded-xl bg-zinc-800/50 hover:bg-blue-600/20 border border-zinc-800 hover:border-blue-500/40 text-left transition">
+          <span class="text-sm font-semibold text-white">العربية (Arabic)</span>
+          <span class="text-xs text-gray-400">AR</span>
+        </button>
+        <button onclick="setAppLanguage('de', 'Deutsch')" class="flex items-center justify-between p-3 rounded-xl bg-zinc-800/50 hover:bg-blue-600/20 border border-zinc-800 hover:border-blue-500/40 text-left transition">
+          <span class="text-sm font-semibold text-white">Deutsch (German)</span>
+          <span class="text-xs text-gray-400">DE</span>
+        </button>
+        <button onclick="setAppLanguage('ja', '日本語')" class="flex items-center justify-between p-3 rounded-xl bg-zinc-800/50 hover:bg-blue-600/20 border border-zinc-800 hover:border-blue-500/40 text-left transition">
+          <span class="text-sm font-semibold text-white">日本語 (Japanese)</span>
+          <span class="text-xs text-gray-400">JA</span>
+        </button>
+        <button onclick="setAppLanguage('zh', '中文')" class="flex items-center justify-between p-3 rounded-xl bg-zinc-800/50 hover:bg-blue-600/20 border border-zinc-800 hover:border-blue-500/40 text-left transition">
+          <span class="text-sm font-semibold text-white">中文 (Chinese)</span>
+          <span class="text-xs text-gray-400">ZH</span>
+        </button>
+        <button onclick="setAppLanguage('ru', 'Русский')" class="flex items-center justify-between p-3 rounded-xl bg-zinc-800/50 hover:bg-blue-600/20 border border-zinc-800 hover:border-blue-500/40 text-left transition">
+          <span class="text-sm font-semibold text-white">Русский (Russian)</span>
+          <span class="text-xs text-gray-400">RU</span>
+        </button>
+        <button onclick="netAppLanguage = function(){};" style="display:none;"></button>
+        <button onclick="setAppLanguage('pt', 'Português')" class="flex items-center justify-between p-3 rounded-xl bg-zinc-800/50 hover:bg-blue-600/20 border border-zinc-800 hover:border-blue-500/40 text-left transition">
+          <span class="text-sm font-semibold text-white">Português (Portuguese)</span>
+          <span class="text-xs text-gray-400">PT</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANTI-THEFT JAVASCRIPT LAYER -->
+  <script>
+    // Disable Right-Click Context Menu
+    document.addEventListener('contextmenu', event => event.preventDefault());
+
+    // Disable Keyboard Shortcuts for Inspect, View Source, and Save
+    document.onkeydown = function(e) {
+      if (
+        e.keyCode == 123 || // F12
+        (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || // Ctrl+Shift+I/J/C
+        (e.ctrlKey && (e.keyCode == 85 || e.keyCode == 83 || e.keyCode == 65)) // Ctrl+U (Source), Ctrl+S (Save), Ctrl+A (Select All)
+      ) {
+        return false;
+      }
+    };
+
+    // Console Warning & Infinite Debugger Trap for Scrappers
+    setInterval(function() {
+      try {
+        let before = new Date();
+        debugger;
+        let after = new Date();
+        if (after - before > 100) {
+          document.body.innerHTML = "<div style='background:black;color:red;height:100vh;display:flex;justify-content:center;align-items:center;font-size:24px;font-family:sans-serif;'>Access Denied: Developer Tools Detected!</div>";
+        }
+      } catch (err) {}
+    }, 1000);
+  </script>
+
+  <!-- Scripts -->
+  <script src="cache-manager.js"></script>
+  <script src="audio-reader.js"></script>
+  <script src="search-engine.js"></script>
+  <script src="app.js"></script>
+</body>
+                </html>
+                
